@@ -4,9 +4,9 @@ A prototype for a support team that tracks bug reports in Trello. When a report 
 
 ## Value
 
-- **Faster first response:** every report is triaged by the agent within minutes of arriving, without waiting for someone to pick it up.
-- **Less support team triage time:** support team only needs to validate escalations and bugs deduplication.
-- **Less product team time lost:** incomplete reports go back to the customer before escalation, so the product owner don't chase missing details.
+- **Faster first response:** every report is triaged by the agent within two minutes of arriving, without waiting for someone to pick it up. Dust customer Wayflyer runs the same pattern on Jira, with [triage research done in under a minute](https://dust.tt/customers/how-wayflyer-built-a-self-tuning-support-flywheel-with-dust).
+- **Less product team time lost:** incomplete reports go back to the customer before escalation, so the product owner doesn't chase missing details.
+- **Less support team triage time:** the support team only validates escalations and bug deduplication. A similar setup used by Augment Code's own support team [cut daily triage from several hours to minutes](https://www.augmentcode.com/blog/automating-customer-feedback-and-support-with-ai-agents).
 
 ## How it works
 
@@ -65,6 +65,9 @@ The service is public because Trello and Dust can't present Google credentials; 
 - More extensive handling of errors on tool parameters for explicit feedback to the agent.
 - Webhooks are processed synchronously: relying on Trello's retries. A production setting would use a queue for robustness and for handling high volume and downtime.
 - The agent read all open engineering issues, which only works on a small board. Large boards may need a search tool.
+
+## Time spent
+- Around 4h spent on the implementation, excluding time exploring the Dust platform and its capabilities.
 
 ## How a customer deployment would differ
 
