@@ -2,6 +2,12 @@
 
 A prototype for a support team that tracks bug reports in Trello. When a report lands in *New reports*, a Dust agent checks it is complete, compares it with existing engineering issues, and proposes either a new engineering issue or a link to an existing one. Support approves in a shared Dust Pod.
 
+## Value
+
+- **Faster first response:** every report is triaged by the agent within minutes of arriving, without waiting for someone to pick it up.
+- **Less support team triage time:** support team only needs to validate escalations and bugs deduplication.
+- **Less product team time lost:** incomplete reports go back to the customer before escalation, so the product owner don't chase missing details.
+
 ## How it works
 
 1. A card arrives in *New reports* (created there, or moved from *Drafts* or back from *Needs information*). Nothing else triggers a run.
@@ -32,3 +38,38 @@ Needs [uv](https://docs.astral.sh/uv/), gcloud with a billed project, a Trello a
 5. `uv run python -m scripts.demo webhooks register`, then `uv run python -m scripts.demo reset` (it only touches `[DEMO]` boards).
 
 Checks: `uv run pytest -q && uv run ruff check . && uv run ruff format --check .` (6 tests on the workflow rules, with in-memory Trello and Dust). Teardown: `scripts.demo webhooks delete`, then `gcloud projects delete <project>`.
+
+## Architecture
+
+One Python service on Cloud Run using FastAPI. It receives Trello webhooks and serves the agent's tools over MCP. All workflow rules are in [workflow.py](app/workflow.py). There is no database: trello is the source of truth and a card's list is its status, and attachments link reports to issues.
+
+## Authentication
+
+- **Trello → service:** Trello's HMAC-SHA1 webhook signature. Invalid signatures get a 401.
+- **Dust → service:** a bearer token on the MCP endpoint.
+- **Service → Dust:** events signed with HMAC-SHA256.
+- **Service → Trello:** API key and token in a header.
+
+The service is public because Trello and Dust can't present Google credentials; the app authenticates them itself.
+
+## Tradeoffs and limitations
+
+### Missing features
+
+- Having in the Pod files the bug report checklist, troubleshooting guides and release notes, so the agent can use them.
+- When a fix is shipped by engineering, linked tickets aren't updated automatically.
+- When a ticket needs information, we can have an agent draft response to customer on the crm.
+
+### Scalability and robustness
+- Trello holds the state: Simpler, but the checks aren't atomic: two agent instances can make different changes, and only one will apply while the other will be dropped silently. This choice was for simplicity and a production setting would use a database such as Firebase for the state.
+- More extensive handling of errors on tool parameters for explicit feedback to the agent.
+- Webhooks are processed synchronously: relying on Trello's retries. A production setting would use a queue for robustness and for handling high volume and downtime.
+- The agent read all open engineering issues, which only works on a small board. Large boards may need a search tool.
+
+## How a customer deployment would differ
+
+- OAuth for Trello and for the Dust MCP connection, with a bot account for the agent's actions.
+- Secret Manager and a least-privilege service account.
+- A queue with retries for the Dust call.
+- A small store for atomic agent changes in Trello using a idempotency keys and an approval audit trail.
+- Issue search, the customer's docs connected to the Pod, and the release follow-up.
