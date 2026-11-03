@@ -31,4 +31,4 @@ Needs [uv](https://docs.astral.sh/uv/), gcloud with a billed project, a Trello a
    - Add a custom webhook source (`X-Dust-Signature`, sha256) and a trigger that posts into the Pod. Put its URL and secret in `.env` and re-run `./deploy.sh`.
 5. `uv run python -m scripts.demo webhooks register`, then `uv run python -m scripts.demo reset` (it only touches `[DEMO]` boards).
 
-Lint: `uv run ruff check . && uv run ruff format --check .`. Teardown: `scripts.demo webhooks delete`, then `gcloud projects delete <project>`.
+Checks: `uv run pytest -q && uv run ruff check . && uv run ruff format --check .` (6 tests on the workflow rules, with in-memory Trello and Dust). Teardown: `scripts.demo webhooks delete`, then `gcloud projects delete <project>`.
